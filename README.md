@@ -44,14 +44,14 @@ Each variable can take a value of your choice:
 
 ### Default Q&As
 
-- Default Q&A set for inference is defined in `data/sample_questions.jsonl` by hallucination categories:
+- Default Q&A set for inference is defined in `data/sample_questions.jsonl` by **hallucination categories**:
 
 ```jsonl
-{"id": 1, "category": "Factual/Entity Errors & Fabrications"}
-{"id": 2, "category": "Faithfulness Hallucinations"}
-{"id": 3, "category": "Past, Temporal, Future Inquiries"}
-{"id": 4, "category": "Logical Inconsistencies & Complex Reasoning"}
-{"id": 5, "category": "Admitting Ignorance (Refusal to Answer)"}
+{"id": 1, "category": "Factual/Entity Errors"}
+{"id": 2, "category": "Context Coherence"}
+{"id": 3, "category": "Temporal Information"}
+{"id": 4, "category": "Complex Reasoning"}
+{"id": 5, "category": "Admitting Ignorance"}
 ```
 
 - You can add, remove, or edit items at `data/sample_questions.jsonl`.
@@ -60,18 +60,20 @@ Each variable can take a value of your choice:
 
 ## Evaluation (Metrics + LLM-as-a-Judge)
 
-- Inference results are evaluated using metrics and an LLM-as-a-Judge `GPT 4o`.
+- Inference results are evaluated using auto metrics from HuggingFace and an LLM-as-a-Judge ([gpt-5-mini](https://platform.openai.com/docs/models/gpt-5-mini))
+
+- To evaluate all results:
 
 ```bash
 chmod +x scripts/eval.sh
 uv run scripts/eval.sh
 ```
 
-- Overall results (inference + evaluation) are stored in the `results_eval` directory by model card.
+- Evaluation scores are stored in the `results_eval` directory, separated by model card.
 
 ### Updating
 
-- Edit `src/evaluate_results.py` to add, remove, edit any eval metrics.
+- Edit `src/evaluation.py` to add, remove, edit any eval metrics.
 - Edit `llm_judge.py` to update an LLM-as-a-judge.
 
 
@@ -83,6 +85,18 @@ uv run scripts/eval.sh
 chmod +x scripts/visualize.sh
 uv run scripts/visualize.sh
 ```
+
+<hr>
+
+## Results
+
+### Qwen/Qwen3-0.6B
+
+<img src='results_fig/Qwen_Qwen3-0.6B.jpg' alt='score results by qwen' width=420 />
+
+### meta-llama/Llama-3.2-1B
+
+<img src='results_fig/meta-llama_Llama-3.2-1B.jpg' alt='eval results by llama' width=420 />
 
 
 <hr>
@@ -112,4 +126,3 @@ rm -rf uv.lock .venv
 uv cache clean
 uv sync
 ```
-

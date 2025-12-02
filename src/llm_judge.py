@@ -51,12 +51,12 @@ def invoke_llm_judge(predictions: List[str], references: List[str], sources: Lis
         load_dotenv()
         openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
         res = openai_client.chat.completions.create(
-            model='gpt-4o-mini',
+            model='gpt-5-mini',
             messages=[
-                {'role': 'system', 'content': SYSTEM_PROMPT},
+                {'role': 'developer', 'content': SYSTEM_PROMPT},
                 {'role': 'user', 'content': user_prompt},
             ],
-            response_format={'type': 'json_object'} # return json
+            response_format={'type': 'json_object'} # return json - https://platform.openai.com/docs/api-reference/chat/create#chat_create-response_format
         )
         json_str = res.choices[0].message.content
         scores_data = json.loads(json_str) # type: ignore 
