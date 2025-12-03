@@ -226,7 +226,7 @@ Dynamic selection can mitigate these drawbacks by shrinking the search space of 
 
 ## References
 
-\[1\]. [Survey o](https://arxiv.org/search/cs?searchtype=author&query=Ji,+Z)f Hallucination in Natural Language Generation (Ji et al., arXiv: 2202.03629)
+\[1\]. [Survey of Hallucination in Natural Language Generation](https://arxiv.org/abs/2202.03629) (Ji et al., arXiv: 2202.03629)
 
 \[2\]. [DoLa: Decoding by Contrasting Layers Improves Factuality in Large Language Models](https://arxiv.org/abs/2309.03883) (Chuang et al., arXiv: 2309.03883)
 
