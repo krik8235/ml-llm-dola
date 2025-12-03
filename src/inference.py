@@ -18,7 +18,7 @@ if __name__ == '__main__':
     parser.add_argument('--input', type=str, default=None)
     parser.add_argument('--label', type=str, default=None)
     parser.add_argument('--dola_layers', type=str, default=None) # 'high', 'low'
-    parser.add_argument('--max_new_tokens', type=int, default=128)
+    parser.add_argument('--max_new_tokens', type=int, default=258)
     parser.add_argument('--decoding_method', type=str, default='greedy') # or 'sample' - generationconfig accepts greedy or sample
     args = parser.parse_args()
 

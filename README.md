@@ -1,4 +1,4 @@
-# DoLa
+# Layer-Contrast Decoding - DoLa
 
 ## Quick Start 
 
@@ -88,19 +88,6 @@ uv run scripts/visualize.sh
 
 <hr>
 
-## Results
-
-### Qwen/Qwen3-0.6B
-
-<img src='results_fig/Qwen_Qwen3-0.6B.jpg' alt='score results by qwen' width=420 />
-
-### meta-llama/Llama-3.2-1B
-
-<img src='results_fig/meta-llama_Llama-3.2-1B.jpg' alt='eval results by llama' width=420 />
-
-
-<hr>
-
 ## Dependency Control
 
 - Install all dependencies:
@@ -126,3 +113,126 @@ rm -rf uv.lock .venv
 uv cache clean
 uv sync
 ```
+
+<hr>
+
+## Core Mechanism: What is Decoding by Contrasting Layers (DoLa)
+
+**Decoding by Contrasting Layers (DoLa)** was first introduced by Chuang et al in 2023 in the paper `[2]` as an inference-time strategy that intervenes in the conditional probability step and enhance the model’s factual knowledge.
+
+The below diagram illustrates how DoLa works:
+
+<img src='https://cdn-images-1.medium.com/max/2600/1*oL76PIGvdLsVju0T5Ih9GA.png' alt='DoLa for a transformer-based LM (Created by [Kuriko IWAI](https://kuriko-iwai.com))'/>
+
+**Figure A.** DoLa for a transformer-based LM (Created by [Kuriko IWAI](https://kuriko-iwai.com))
+
+### Layer Contrast: Boosting Factual Knowledge in Transformer LMs
+
+From a model interpretability perspective, **transformer-based language models (LMs)** encode lower-level information in the lower (earlier) layers and more semantic information in the higher (later) layers `[3]`, with its topmost layers containing the knowledge neurons that express factual knowledge they acquired in the pretraining process `[4]`.
+
+* **Lower layers** contain low-level linguistic features, syntax, local context
+    
+* **Higher layers** contain high-level semantic features, abstract reasoning, factual knowledge
+    
+
+DoLa exploits this modular encoding to amplify the factual knowledge through a contrastive decoding approach where the conditional probability for a next word is generated based on the *difference* in logits (raw prediction scores) between a higher layer and a lower layer.
+
+In **Figure A**, **greedy search** selects “*Ottawa”* because the last layer (the 32th layer) of the transformer block predicts the highest conditional probability (72%) for that token.
+
+**DoLa**, on the other hand, selects *“Ottawa”* because the adjusted logits using a contrast score between the 32nd and 24th layers for the token are the highest.
+
+This approach helps emphasizing the factual knowledge of higher layers and downplaying knowledge of lower layers, making the model more factual and reducing hallucinations.
+
+### The Contrastive Decoding Methodology
+
+Standard LLMs compute the conditional probability of the next token `x_t` being a specific vocabulary item `v` such that:
+
+$$P(x_t = v \mid x_{<t}) = \text{softmax}(\phi(h_t^{(N)}))_{v} \quad \text{for all } v \in \mathcal{X} \quad (1)$$
+
+where
+
+* `v` is a specific token from the vocabulary drawn from the vocabulary set `X`,
+    
+* `x_{<t}` is context, the sequence of all preceding tokens `{x1, x2, …, x_t−1}`,
+    
+* `N`: The final layer (**mature layer**) in the transformer,
+    
+* `h_t^{(N)}` is the hidden state in the final layer of the transformer with `N` stacked layers, and
+    
+* `ϕ(⋅)` is the language head (size: X) from a final linear layer that projects the hidden state h into a vector of logits.
+    
+
+Instead of the standard **Eq. (1)**, DoLa takes two major steps to compute the next token probability.
+
+First, the prediction distribution `q_j(x_t)` is computed for each candidate layer `j` using the early-exit mechanism:
+
+$$q_j(x_t) = \text{softmax}(\phi(h_t^{(j)})) \quad j \in \mathcal{J} \quad (2)$$
+
+where `J` denotes a set of early/intermediate layers.
+
+The **premature layer** `M`is then selected as the layer whose distribution `q_M` is most distant from the one of the mature layer `q_N` such that:
+
+$$M = \arg \max_{j \in \mathcal{J}} d(q_N(\cdot), q_j(\cdot)) \quad (3)$$
+
+where `d(,)` denotes the Jensen-Shannon Divergence, and `q (⋅)`'s are from **Eq. (2)**.
+
+Because DoLa leverages the differences of logits between layers, it expects that the significant difference in logits of the layer `M` from the logits of the mature layer `N` signals the layer `M` has crucial factual knowledge that the model should integrate.
+
+After selecting the premature layer M, DoLa computes the final probability for the next token such that
+
+$$\hat{P}(x_t = v \mid x_{<t}) = \text{softmax}(\mathcal{F}(q_N(x_t), q_M(x_t))_{v} \quad (4)$$
+
+where `F( , )` computes the log-domain difference of the two distributions q’s in **Eq. (2)** such that:
+
+$$\mathcal{F}(q_N(x_t), q_M(x_t)) = \begin{cases} \log \frac{q_N(x_t)}{q_M(x_t)}, & \text{if } x_t \in \mathcal{V}{\text{head}}(x{<t}), \\ -\infty, & \text{otherwise}. \end{cases} \quad (5)$$
+
+where the set of candidate tokens `V_{head}(x < t)` is defined as whether the token has high enough probabilities from the mature layer N (the selection criterion) `[5]` such thats:
+
+$$\mathcal{V}_{\text{head}}(x{<t}) = \{x_t \in \mathcal{X} : q_N(x_t) \geq \alpha \max_{w} q_N(w)\} \quad (6)$$
+
+where
+
+* `q_N(x_t)` is probability of the token `x_t` in the mature layer N being selected,
+    
+* `α ∈ [0, 1]` is a **confidence threshold** (hyperparameter) to define the lower bound of the probability that the candidate token can take, and
+    
+* `w` is any token in the entire vocabulary set `X`.
+    
+
+In other word, **Eq. (6)** indicates that a token `x_t` is included in the candidate set *if only* its probability `q_N(x_t)` is at least `α` times the maximum probability `max_{w} q_N(w)` among all tokens in the vocabulary set `X`.
+
+And by computing the log-difference as defined in **Eq. (5)**, the model attempts to weigh the tokens that the mature layer N predicts highly, but the less-informed layer M did not.
+
+### Dynamic vs. Static Selection of the Premature Layer M
+
+**Eq. (3)** represents the objective function of dynamically selecting a premature layer `M`.
+
+On the other hand, **DoLa-static** runs experiments on all possible early layers using a validation set and picks the one with the best validation performance.
+
+This approach is more intuitive than the dynamic selection, but has drawbacks of:
+
+1. Requiring more hyperparameter search runs in layers and
+    
+2. Best layers are sensitive to data distribution, thus requiring in-distribution (ID) validation sets where samples are drawn from the same underlying probability distribution as the training data.
+    
+
+In common scenarios where perfectly ID validation sets are unavailable, DoLa-static selects different optimal layers when evaluated on different subsets randomly sampled from the original dataset.
+
+Dynamic selection can mitigate these drawbacks by shrinking the search space of the premature layer and making the method more robust without heavily relying on ID validation sets `[2]`.
+
+
+<hr>
+
+## References
+
+\[1\]. [Survey o](https://arxiv.org/search/cs?searchtype=author&query=Ji,+Z)f Hallucination in Natural Language Generation (Ji et al., arXiv: 2202.03629)
+
+\[2\]. [DoLa: Decoding by Contrasting Layers Improves Factuality in Large Language Models](https://arxiv.org/abs/2309.03883) (Chuang et al., arXiv: 2309.03883)
+
+\[3\]. [BERT Rediscovers the Classical NLP Pipeline](https://aclanthology.org/P19-1452/) (Tenney et al., ACL 2019)
+
+\[4\]. [Knowledge Neurons in Pretrained Transformers](https://aclanthology.org/2022.acl-long.581/) (Dai et al., ACL 2022)
+
+\[5\]. [Contrastive Decoding: Open-ended Text Generation as Optimization](https://aclanthology.org/2023.acl-long.687/) (Li et al., ACL 2023)
+
+\[6\]. [CTRL: A Conditional Transformer Language Model for Controllable Generation](https://arxiv.org/abs/1909.05858) (Keskur et al., arXiv 1909.05858)
