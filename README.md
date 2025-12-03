@@ -145,67 +145,68 @@ This approach helps emphasizing the factual knowledge of higher layers and downp
 
 ### The Contrastive Decoding Methodology
 
-Standard LLMs compute the conditional probability of the next token `x_t` being a specific vocabulary item `v` such that:
+Standard LLMs compute the conditional probability of the next token $x_t$ being a specific vocabulary item $v$ such that:
 
-$$P(x_t = v \mid x_{<t}) = \text{softmax}(\phi(h_t^{(N)}))_{v} \quad \text{for all } v \in \mathcal{X} \quad (1)$$
+$$P(x_t = v \mid x_{<t}) = \text{softmax}(\phi(h_t^{(N)}))_v \quad \text{for all } v \in \mathcal{X} \quad (1) $$
+
 
 where
 
-* `v` is a specific token from the vocabulary drawn from the vocabulary set `X`,
+* $v$ is a specific token from the vocabulary drawn from the vocabulary set $X$,
     
-* `x_{<t}` is context, the sequence of all preceding tokens `{x1, x2, …, x_t−1}`,
+* $x_{<t}$ is context, the sequence of all preceding tokens ${x1, x2, \cdots, x_t−1}$,
     
-* `N`: The final layer (**mature layer**) in the transformer,
+* $N$: The final layer (**mature layer**) in the transformer,
     
-* `h_t^{(N)}` is the hidden state in the final layer of the transformer with `N` stacked layers, and
+* $h_t^{(N)}$ is the hidden state in the final layer of the transformer with $N$ stacked layers, and
     
-* `ϕ(⋅)` is the language head (size: X) from a final linear layer that projects the hidden state h into a vector of logits.
+* $ϕ(⋅)$ is the language head (size: X) from a final linear layer that projects the hidden state h into a vector of logits.
     
 
 Instead of the standard **Eq. (1)**, DoLa takes two major steps to compute the next token probability.
 
-First, the prediction distribution `q_j(x_t)` is computed for each candidate layer `j` using the early-exit mechanism:
+First, the prediction distribution $q_j(x_t)$ is computed for each candidate layer $j$ using the early-exit mechanism:
 
 $$q_j(x_t) = \text{softmax}(\phi(h_t^{(j)})) \quad j \in \mathcal{J} \quad (2)$$
 
-where `J` denotes a set of early/intermediate layers.
+where $J$ denotes a set of early/intermediate layers.
 
-The **premature layer** `M`is then selected as the layer whose distribution `q_M` is most distant from the one of the mature layer `q_N` such that:
+The **premature layer** $M$ is then selected as the layer whose distribution $q_M$ is most distant from the one of the mature layer $q_N$ such that:
 
 $$M = \arg \max_{j \in \mathcal{J}} d(q_N(\cdot), q_j(\cdot)) \quad (3)$$
 
-where `d(,)` denotes the Jensen-Shannon Divergence, and `q (⋅)`'s are from **Eq. (2)**.
+where $d(,)$ denotes the Jensen-Shannon Divergence, and $q (⋅)$'s are from **Eq. (2)**.
 
-Because DoLa leverages the differences of logits between layers, it expects that the significant difference in logits of the layer `M` from the logits of the mature layer `N` signals the layer `M` has crucial factual knowledge that the model should integrate.
+Because DoLa leverages the differences of logits between layers, it expects that the significant difference in logits of the layer $M$ from the logits of the mature layer $N$ signals the layer $M$ has crucial factual knowledge that the model should integrate.
 
 After selecting the premature layer M, DoLa computes the final probability for the next token such that
 
-$$\hat{P}(x_t = v \mid x_{<t}) = \text{softmax}(\mathcal{F}(q_N(x_t), q_M(x_t)))_{v} \quad (4)$$
+$$\hat {P}(x_t = v \mid x_{<t}) = \text{softmax}(\mathcal{F}(q_N(x_t), q_M(x_t)))_{v} \quad (4)$$
 
-where `F( , )` computes the log-domain difference of the two distributions q’s in **Eq. (2)** such that:
+where $F( , )$ computes the log-domain difference of the two distributions q’s in **Eq. (2)** such that:
 
 $$\mathcal{F}(q_N(x_t), q_M(x_t)) = \begin{cases} \log \frac{q_N(x_t)}{q_M(x_t)}, & \text{if } x_t \in \mathcal{V}_{\text{head}}(x_{<t}), \\ -\infty, & \text{otherwise}. \end{cases} \quad (5)$$
 
-where the set of candidate tokens `V_{head}(x < t)` is defined as whether the token has high enough probabilities from the mature layer N (the selection criterion) `[5]` such thats:
+where the set of candidate tokens $V_{head}(x < t)$ is defined as whether the token has high enough probabilities from the mature layer N (the selection criterion) `[5]` such thats:
 
 $$\mathcal{V}_{\text{head}}(x{<t}) = \{x_t \in \mathcal{X} : q_N(x_t) \geq \alpha \max_{w} q_N(w)\} \quad (6)$$
 
 where
 
-* `q_N(x_t)` is probability of the token `x_t` in the mature layer N being selected,
+* $q_N(x_t)$ is probability of the token $x_t$ in the mature layer $N$ being selected,
     
-* `α ∈ [0, 1]` is a **confidence threshold** (hyperparameter) to define the lower bound of the probability that the candidate token can take, and
+* $α ∈ [0, 1]$ is a **confidence threshold** (hyperparameter) to define the lower bound of the probability that the candidate token can take, and
     
-* `w` is any token in the entire vocabulary set `X`.
+* $w$ is any token in the entire vocabulary set $X$.
     
 
-In other word, **Eq. (6)** indicates that a token `x_t` is included in the candidate set *if only* its probability `q_N(x_t)` is at least `α` times the maximum probability `max_{w} q_N(w)` among all tokens in the vocabulary set `X`.
+In other word, **Eq. (6)** indicates that a token $x_t$ is included in the candidate set *if only* its probability $q_N(x_t)$ is at least $α$ times the maximum probability $max_{w} q_N(w)$ among all tokens in the vocabulary set $X$.
 
 And by computing the log-difference as defined in **Eq. (5)**, the model attempts to weigh the tokens that the mature layer N predicts highly, but the less-informed layer M did not.
 
 ### Dynamic vs. Static Selection of the Premature Layer M
 
-**Eq. (3)** represents the objective function of dynamically selecting a premature layer `M`.
+**Eq. (3)** represents the objective function of dynamically selecting a premature layer $M$.
 
 On the other hand, **DoLa-static** runs experiments on all possible early layers using a validation set and picks the one with the best validation performance.
 
