@@ -122,7 +122,7 @@ uv sync
 
 The below diagram illustrates how DoLa works:
 
-<img src='https://cdn-images-1.medium.com/max/2600/1*oL76PIGvdLsVju0T5Ih9GA.png' alt='DoLa for a transformer-based LM (Created by [Kuriko IWAI](https://kuriko-iwai.com))'/>
+<img src='https://cdn-images-1.medium.com/max/2600/1*oL76PIGvdLsVju0T5Ih9GA.png' alt='DoLa for a transformer-based LM (Created by [Kuriko IWAI)'/>
 
 **Figure A.** DoLa for a transformer-based LM (Created by [Kuriko IWAI](https://kuriko-iwai.com))
 
@@ -180,11 +180,11 @@ Because DoLa leverages the differences of logits between layers, it expects that
 
 After selecting the premature layer M, DoLa computes the final probability for the next token such that
 
-$$\hat{P}(x_t = v \mid x_{<t}) = \text{softmax}(\mathcal{F}(q_N(x_t), q_M(x_t))_{v} \quad (4)$$
+$$\hat{P}(x_t = v \mid x_{<t}) = \text{softmax}(\mathcal{F}(q_N(x_t), q_M(x_t)))_{v} \quad (4)$$
 
 where `F( , )` computes the log-domain difference of the two distributions q’s in **Eq. (2)** such that:
 
-$$\mathcal{F}(q_N(x_t), q_M(x_t)) = \begin{cases} \log \frac{q_N(x_t)}{q_M(x_t)}, & \text{if } x_t \in \mathcal{V}{\text{head}}(x{<t}), \\ -\infty, & \text{otherwise}. \end{cases} \quad (5)$$
+$$\mathcal{F}(q_N(x_t), q_M(x_t)) = \begin{cases} \log \frac{q_N(x_t)}{q_M(x_t)}, & \text{if } x_t \in \mathcal{V}_{\text{head}}(x_{<t}), \\ -\infty, & \text{otherwise}. \end{cases} \quad (5)$$
 
 where the set of candidate tokens `V_{head}(x < t)` is defined as whether the token has high enough probabilities from the mature layer N (the selection criterion) `[5]` such thats:
 
