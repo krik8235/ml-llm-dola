@@ -151,7 +151,7 @@ This approach helps emphasizing the factual knowledge of higher layers and downp
 Standard LLMs compute the conditional probability of the next token $x_t$ being a specific vocabulary item $v$ such that:
 
 ```math
-P(x_t = v \mid x_{<t}) = \text{softmax}(\phi(h_t^{(N)}))_v \quad \text{for all } v \in \mathcal{X} \quad (1)
+P(x_t = v \mid x_{&lt;t}) = \text{softmax}(\phi(h_t^{(N)}))_v \quad \text{for all } v \in \mathcal{X} \quad (1)
 ```
 
 where
@@ -185,7 +185,7 @@ Because DoLa leverages the differences of logits between layers, it expects that
 
 After selecting the premature layer M, DoLa computes the final probability for the next token such that
 
-$$\hat {P}(x_t = v \mid x_{<t}) = \text{softmax}(\mathcal{F}(q_N(x_t), q_M(x_t)))_{v} \quad (4)$$
+$$\hat{P}(x_t = v \mid x_{&lt;t}) = \text{softmax}(\mathcal{F}(q_N(x_t), q_M(x_t)))_{v} \quad (4)$$
 
 where $F( , )$ computes the log-domain difference of the two distributions q’s in **Eq. (2)** such that:
 
