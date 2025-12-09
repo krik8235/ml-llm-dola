@@ -185,7 +185,9 @@ Because DoLa leverages the differences of logits between layers, it expects that
 
 After selecting the premature layer M, DoLa computes the final probability for the next token such that
 
-$$\hat{P}(x_t = v \mid x_{&lt;t}) = \text{softmax}(\mathcal{F}(q_N(x_t), q_M(x_t)))_{v} \quad (4)$$
+```math
+\hat{P}(x_t = v \mid x_{&lt;t}) = \text{softmax}(\mathcal{F}(q_N(x_t), q_M(x_t)))_{v} \quad (4)
+```
 
 where $F( , )$ computes the log-domain difference of the two distributions q’s in **Eq. (2)** such that:
 
