@@ -122,7 +122,10 @@ uv sync
 
 The below diagram illustrates how DoLa works:
 
-<img src='https://cdn-images-1.medium.com/max/2600/1*oL76PIGvdLsVju0T5Ih9GA.png' alt='DoLa for a transformer-based LM (Created by [Kuriko IWAI)'/>
+<img 
+    src='https://miro.medium.com/v2/resize:fit:4800/format:webp/1*oL76PIGvdLsVju0T5Ih9GA.png'
+    alt='DoLa for a transformer-based LM (Created by [Kuriko IWAI)'
+/>
 
 **Figure A.** DoLa for a transformer-based LM (Created by [Kuriko IWAI](https://kuriko-iwai.com))
 
@@ -147,8 +150,9 @@ This approach helps emphasizing the factual knowledge of higher layers and downp
 
 Standard LLMs compute the conditional probability of the next token $x_t$ being a specific vocabulary item $v$ such that:
 
-$$P(x_t = v \mid x_{<t}) = \text{softmax}(\phi(h_t^{(N)}))_v \quad \text{for all } v \in \mathcal{X} \quad (1) $$
-
+```math
+P(x_t = v \mid x_{<t}) = \text{softmax}(\phi(h_t^{(N)}))_v \quad \text{for all } v \in \mathcal{X} \quad (1)
+```
 
 where
 
