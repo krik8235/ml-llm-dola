@@ -82,8 +82,7 @@ uv run scripts/eval.sh
 - The following command will save bar graphs (.jpg file) in the `results_fig` directory:
 
 ```bash
-chmod +x scripts/visualize.sh
-uv run scripts/visualize.sh
+chmod +x scripts/visualize.sh & uv run scripts/visualize.sh
 ```
 
 <hr>

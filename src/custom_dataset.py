@@ -28,5 +28,5 @@ class CustomDataset(Dataset):
 
     def get_all_labels_and_categories(self) -> tuple[list[str], list[int]]:
         items = self.data_list
-        return [item['label'] for item in items], [int(item['category']) for item in items], 
+        return [item['label'] for item in items], [int(item['category']) for item in items]
     
